@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luyện Nghe Còi Morse - Trại Hè</title>
+    
+    <!-- Google Fonts: Roboto & Material Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header elevation-2">
+            <div class="header-content">
+                <span class="material-icons logo-icon">campaign</span>
+                <h1>Luyện Nghe Còi Morse</h1>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- SETTINGS PANEL (Cột trái trên Desktop) -->
+            <aside class="settings-panel card elevation-1">
+                <h2 class="panel-title"><span class="material-icons">settings</span> Cài Đặt</h2>
+                
+                <!-- Chế độ luyện tập -->
+                <div class="setting-group">
+                    <label class="setting-label">Chế độ luyện tập</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="mode" value="1" checked>
+                            <span class="radio-custom"></span>
+                            Ký tự (A-Z, 0-9)
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="mode" value="2">
+                            <span class="radio-custom"></span>
+                            Từ vựng
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="mode" value="3">
+                            <span class="radio-custom"></span>
+                            Câu hoàn chỉnh
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Nguồn dữ liệu (Chỉ hiện khi chọn Mode 2 hoặc 3) -->
+                <div class="setting-group" id="dataSourceGroup" style="display: none;">
+                    <label class="setting-label">Nguồn dữ liệu</label>
+                    <select id="dataSource" class="material-select">
+                        <option value="commands">Khẩu lệnh trại</option>
+                        <option value="bible">Kinh Thánh</option>
+                        <option value="words">Từ vựng chung</option>
+                    </select>
+                </div>
+
+                <!-- Độ dài câu (Chỉ hiện khi chọn Mode 3) -->
+                <div class="setting-group" id="wordCountGroup" style="display: none;">
+                    <label class="setting-label">
+                        Độ dài câu: <span id="wordCountValue" class="badge">5 từ</span>
+                    </label>
+                    <input type="range" id="wordCountSlider" min="2" max="20" value="5" class="material-slider">
+                </div>
+
+                <!-- Tốc độ WPM -->
+                <div class="setting-group">
+                    <label class="setting-label">
+                        Tốc độ (WPM): <span id="wpmValue" class="badge">15 WPM</span>
+                    </label>
+                    <input type="range" id="wpmSlider" min="5" max="30" value="15" step="1" class="material-slider">
+                </div>
+
+                <!-- Âm lượng -->
+                <div class="setting-group">
+                    <label class="setting-label">
+                        Âm lượng: <span id="volumeValue" class="badge">80%</span>
+                    </label>
+                    <div class="volume-control">
+                        <button id="muteBtn" class="icon-btn" title="Tắt/Mở âm thanh">
+                            <span class="material-icons" id="muteIcon">volume_up</span>
+                        </button>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="80" class="material-slider">
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAIN TRAINING AREA (Cột phải trên Desktop) -->
+            <main class="training-area">
+                
+                <!-- Bảng thống kê điểm số -->
+                <div class="stats-board card elevation-1">
+                    <div class="stat-item">
+                        <span class="stat-label">Đúng</span>
+                        <span class="stat-value text-success" id="statCorrect">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Sai</span>
+                        <span class="stat-value text-danger" id="statIncorrect">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Chuỗi (Streak)</span>
+                        <span class="stat-value text-primary" id="statStreak">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tỷ lệ</span>
+                        <span class="stat-value" id="statRate">0%</span>
+                    </div>
+                </div>
+
+                <!-- Khu vực điều khiển Audio -->
+                <div class="audio-controls card elevation-1">
+                    <div class="status-indicator" id="statusIndicator">Sẵn sàng</div>
+                    <div class="control-buttons">
+                        <button id="playBtn" class="btn btn-primary ripple">
+                            <span class="material-icons">play_arrow</span> Phát
+                        </button>
+                        <button id="replayBtn" class="btn btn-secondary ripple" disabled>
+                            <span class="material-icons">replay</span> Phát lại
+                        </button>
+                        <button id="stopBtn" class="btn btn-danger ripple" disabled>
+                            <span class="material-icons">stop</span> Dừng
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Khu vực nhập đáp án -->
+                <div class="input-section card elevation-1">
+                    <label for="answerInput" class="input-label">Nhập đáp án của bạn (TELEX, không dấu):</label>
+                    <input type="text" id="answerInput" class="material-input" placeholder="Ví dụ: tap hop..." autocomplete="off" spellcheck="false" disabled>
+                    
+                    <div class="action-buttons">
+                        <button id="checkBtn" class="btn btn-success ripple" disabled>
+                            <span class="material-icons">check_circle</span> Kiểm tra
+                        </button>
+                        <button id="showAnswerBtn" class="btn btn-warning ripple" disabled>
+                            <span class="material-icons">visibility</span> Hiện đáp án
+                        </button>
+                        <button id="nextBtn" class="btn btn-info ripple">
+                            <span class="material-icons">skip_next</span> Câu mới
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Khu vực hiển thị kết quả (Ẩn mặc định) -->
+                <div id="feedbackSection" class="feedback-section card elevation-1" style="display: none;">
+                    <h3 id="feedbackTitle" class="feedback-title">Kết quả</h3>
+                    <div class="feedback-content">
+                        <p class="feedback-text">Đáp án đúng: <strong id="correctAnswerText"></strong></p>
+                        <p class="feedback-text">Bạn nhập: <span id="userAnswerText"></span></p>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Nạp dữ liệu (Data) -->
+    <script src="js/data/letters.js"></script>
+    <script src="js/data/words.js"></script>
+    <script src="js/data/commands.js"></script>
+    <script src="js/data/bible.js"></script>
+
+    <!-- Nạp Engine -->
+    <script src="js/audio.js"></script>
+    <script src="js/morse.js"></script>
+    <script src="js/question.js"></script>
+
+    <!-- Nạp Logic UI chính -->
+    <script src="js/main.js"></script>
+</body>
+</html>

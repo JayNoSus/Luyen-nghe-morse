@@ -1,27 +1,26 @@
 /**
- * QUESTION ENGINE
- * Quản lý việc sinh câu hỏi, kiểm tra đáp án và thống kê điểm số.
+ * QUESTION ENGINE (Nâng cấp: Thuật toán Shuffle Bag)
+ * Đảm bảo phát hết kho dữ liệu mới quay vòng lại.
  */
 
 class QuestionManager {
     constructor() {
-        this.currentAnswer = ""; // Lưu đáp án hiện tại (chữ in hoa)
+        this.currentAnswer = "";
         
-        // Bảng thống kê điểm số
+        // Kho lưu trữ các "túi" câu hỏi còn lại cho từng loại
+        this.pools = {
+            letters: [],
+            words: [],
+            commands: [],
+            bible: []
+        };
+
         this.stats = {
             correct: 0,
             incorrect: 0,
             streak: 0,
             total: 0
         };
-    }
-
-    /**
-     * Lấy một phần tử ngẫu nhiên trong mảng
-     */
-    getRandomItem(array) {
-        const randomIndex = Math.floor(Math.random() * array.length);
-        return array[randomIndex];
     }
 
     /**
@@ -37,68 +36,79 @@ class QuestionManager {
     }
 
     /**
+     * Lấy câu hỏi tiếp theo từ túi, nếu túi rỗng thì nạp đầy lại
+     */
+    getNextFromPool(poolKey, sourceData) {
+        // Nếu túi rỗng, nạp đầy dữ liệu từ nguồn và xáo trộn
+        if (this.pools[poolKey].length === 0) {
+            console.log(`Hệ thống: Đã phát hết kho ${poolKey}. Đang nạp lại và xáo trộn vòng mới...`);
+            this.pools[poolKey] = this.shuffleArray(sourceData);
+        }
+        
+        // Lấy phần tử cuối cùng ra khỏi túi (pop)
+        return this.pools[poolKey].pop();
+    }
+
+    /**
      * Sinh câu hỏi mới dựa trên cài đặt
-     * @param {string} mode - '1' (Ký tự), '2' (Từ vựng), '3' (Câu)
-     * @param {string} dataSource - 'commands', 'bible', 'words'
-     * @param {number} wordCount - Số lượng từ (dành cho Mode 3)
-     * @returns {string} - Câu hỏi đã được tạo
      */
     generateQuestion(mode, dataSource, wordCount) {
         let answer = "";
 
         if (mode === '1') {
-            // Mode 1: 1 Ký tự ngẫu nhiên
-            answer = this.getRandomItem(DATA_LETTERS);
+            // Mode 1: Ký tự (A-Z, 0-9)
+            answer = this.getNextFromPool('letters', DATA_LETTERS);
         } 
         else if (mode === '2') {
-            // Mode 2: 1 Từ vựng ngẫu nhiên (có thể là cụm từ ngắn trong DATA_WORDS)
-            answer = this.getRandomItem(DATA_WORDS);
+            // Mode 2: Từ vựng
+            answer = this.getNextFromPool('words', DATA_WORDS);
         } 
         else if (mode === '3') {
-            // Mode 3: Câu hoàn chỉnh với độ dài tùy chỉnh
-            let dataPool = [];
-            if (dataSource === 'commands') dataPool = DATA_COMMANDS;
-            else if (dataSource === 'bible') dataPool = DATA_BIBLE;
-            else dataPool = DATA_WORDS;
+            // Mode 3: Câu hoàn chỉnh
+            // Với Mode 3, chúng ta bốc các câu gốc từ kho dữ liệu (Commands hoặc Bible)
+            // để đảm bảo người dùng nghe hết các câu mẫu trước khi lặp lại.
+            let sourceData = (dataSource === 'commands') ? DATA_COMMANDS : (dataSource === 'bible' ? DATA_BIBLE : DATA_WORDS);
+            let poolKey = dataSource; // 'commands' hoặc 'bible' hoặc 'words'
 
-            // Xáo trộn kho dữ liệu để lấy ngẫu nhiên
-            let pool = this.shuffleArray(dataPool);
-            let words = [];
+            // Khởi tạo pool cho dataSource nếu chưa có
+            if (!this.pools[poolKey]) this.pools[poolKey] = [];
 
-            // Rút trích các từ cho đến khi đủ (hoặc dư) số lượng yêu cầu
-            for (let phrase of pool) {
-                let phraseWords = phrase.split(' ');
-                words = words.concat(phraseWords);
-                if (words.length >= wordCount) break;
+            let rawPhrase = this.getNextFromPool(poolKey, sourceData);
+            
+            // Xử lý độ dài câu theo Slider (wordCount)
+            // Nếu câu bốc ra ngắn hơn wordCount, ta bốc thêm từ kho Words để bù vào cho đủ
+            let words = rawPhrase.split(' ');
+            
+            if (words.length < wordCount) {
+                // Bốc thêm từ ngẫu nhiên để đủ số lượng yêu cầu
+                while (words.length < wordCount) {
+                    let extraWord = DATA_WORDS[Math.floor(Math.random() * DATA_WORDS.length)];
+                    words.push(...extraWord.split(' '));
+                }
             }
-
-            // Cắt chính xác số lượng từ người dùng yêu cầu và ghép lại
+            
+            // Cắt đúng số lượng từ yêu cầu
             answer = words.slice(0, wordCount).join(' ');
         }
 
-        // Lưu lại đáp án chuẩn (In hoa, xóa khoảng trắng thừa)
         this.currentAnswer = answer.toUpperCase().trim().replace(/\s+/g, ' ');
         return this.currentAnswer;
     }
 
     /**
-     * Kiểm tra đáp án của người dùng
-     * @param {string} userInput - Chuỗi người dùng nhập vào
-     * @returns {object} - Kết quả kiểm tra và mã HTML để hiển thị lỗi
+     * Kiểm tra đáp án
      */
     checkAnswer(userInput) {
-        // Chuẩn hóa chuỗi nhập vào
         const normalizedInput = userInput.toUpperCase().trim().replace(/\s+/g, ' ');
         const isCorrect = (normalizedInput === this.currentAnswer);
 
-        // Cập nhật điểm số
         this.stats.total++;
         if (isCorrect) {
             this.stats.correct++;
             this.stats.streak++;
         } else {
             this.stats.incorrect++;
-            this.stats.streak = 0; // Đứt chuỗi
+            this.stats.streak = 0;
         }
 
         return {
@@ -109,46 +119,27 @@ class QuestionManager {
         };
     }
 
-    /**
-     * So sánh từng ký tự để tạo mã HTML bôi đỏ chỗ sai
-     */
     generateDiffHTML(correct, user) {
         let html = '';
         const maxLength = Math.max(correct.length, user.length);
-
         for (let i = 0; i < maxLength; i++) {
             if (i >= user.length) {
-                // Người dùng gõ thiếu ký tự
                 html += `<span class="char-incorrect">_</span>`;
             } else if (i >= correct.length) {
-                // Người dùng gõ dư ký tự
                 html += `<span class="char-incorrect">${user[i]}</span>`;
             } else if (correct[i] === user[i]) {
-                // Gõ đúng
-                if (user[i] === ' ') {
-                    html += `&nbsp;`; // Giữ khoảng trắng
-                } else {
-                    html += `<span class="char-correct">${user[i]}</span>`;
-                }
+                html += (user[i] === ' ') ? `&nbsp;` : `<span class="char-correct">${user[i]}</span>`;
             } else {
-                // Gõ sai ký tự
                 html += `<span class="char-incorrect">${user[i]}</span>`;
             }
         }
         return html;
     }
 
-    /**
-     * Lấy thống kê hiện tại
-     */
     getStats() {
         const rate = this.stats.total === 0 ? 0 : Math.round((this.stats.correct / this.stats.total) * 100);
-        return {
-            ...this.stats,
-            rate: rate
-        };
+        return { ...this.stats, rate: rate };
     }
 }
 
-// Khởi tạo instance toàn cục
 const questionManager = new QuestionManager();

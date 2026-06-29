@@ -4,6 +4,7 @@ Có 3 mode:
   - nghe từng ký tự
   - nghe 1 từ
   - nghe 1 đoạn
+
 có thể chỉnh tốc độ (WPM)
 có thể chỉnh volume
 web sẽ phát âm thanh và người dùng nhập đáp án vào ô trả lời

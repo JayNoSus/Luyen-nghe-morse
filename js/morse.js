@@ -47,18 +47,17 @@ class MorseEngine {
     }
 
     /**
-     * Tính toán thời gian (ms) cho các thành phần Morse dựa trên WPM
-     * Sử dụng chuẩn từ "PARIS" (50 đơn vị thời gian)
+     * Tính toán thời gian (ms) cho các thành phần Morse dựa trên WPM và hệ số khoảng cách
      */
-    calculateTiming(wpm) {
+    calculateTiming(wpm, charMultiplier = 1, wordMultiplier = 1) {
         const dotDuration = 1200 / wpm; // 1 đơn vị (T)
         
         return {
             dot: dotDuration,                     // Ti: 1T
             dash: dotDuration * 3,                // Te: 3T
             elementSpace: dotDuration,            // Nghỉ giữa Ti/Te trong cùng 1 chữ: 1T
-            charSpace: dotDuration * 3,           // Nghỉ giữa các chữ cái trong 1 từ: 3T
-            wordSpace: dotDuration * 7            // Nghỉ giữa các từ: 7T
+            charSpace: dotDuration * 3 * charMultiplier, // Nghỉ giữa các chữ cái (nhân hệ số)
+            wordSpace: dotDuration * 7 * wordMultiplier  // Nghỉ giữa các từ (nhân hệ số)
         };
     }
 
@@ -76,15 +75,16 @@ class MorseEngine {
      * @param {function} onStart - Callback khi bắt đầu phát
      * @param {function} onEnd - Callback khi phát xong hoặc bị dừng
      */
-    async play(text, wpm, onStart, onEnd) {
+    async play(text, wpm, charMultiplier = 1, wordMultiplier = 1, onStart, onEnd) {
         if (this.isPlaying) return;
         
         this.isPlaying = true;
-        audioEngine.stopFlag = false; // Đặt lại cờ dừng của Audio Engine
+        audioEngine.stopFlag = false;
         
         if (typeof onStart === 'function') onStart();
 
-        const timing = this.calculateTiming(wpm);
+        // Tính timing có nhân hệ số giãn cách
+        const timing = this.calculateTiming(wpm, charMultiplier, wordMultiplier);
         const morseWords = this.textToMorse(text);
 
         try {

@@ -77,6 +77,22 @@
                     <input type="range" id="wpmSlider" min="5" max="30" value="15" step="1" class="material-slider">
                 </div>
 
+                <!-- Khoảng cách giữa các ký tự -->
+                <div class="setting-group">
+                    <label class="setting-label">
+                        Khoảng cách ký tự: <span id="charSpaceValue" class="badge">1.0x</span>
+                    </label>
+                    <input type="range" id="charSpaceSlider" min="1" max="5" value="1" step="0.5" class="material-slider">
+                </div>
+
+                <!-- Khoảng cách giữa các từ -->
+                <div class="setting-group">
+                    <label class="setting-label">
+                        Khoảng cách từ: <span id="wordSpaceValue" class="badge">1.0x</span>
+                    </label>
+                    <input type="range" id="wordSpaceSlider" min="1" max="5" value="1" step="0.5" class="material-slider">
+                </div>
+
                 <!-- Âm lượng -->
                 <div class="setting-group">
                     <label class="setting-label">
@@ -174,5 +190,15 @@
 
     <!-- Nạp Logic UI chính -->
     <script src="js/main.js"></script>
+
+    <!-- MODAL CHÚC MỪNG KHI HOÀN THÀNH CYCLE -->
+    <div id="congratsModal" class="congrats-modal" style="display: none;">
+        <div class="congrats-content card">
+            <span class="material-icons congrats-icon">emoji_events</span>
+            <h2>Xuất Sắc!</h2>
+            <p>Bạn đã hoàn thành xuất sắc toàn bộ bộ câu hỏi của vòng này!</p>
+            <button id="closeCongratsBtn" class="btn btn-success ripple">Tiếp tục vòng mới</button>
+        </div>
+    </div>
 </body>
 </html>

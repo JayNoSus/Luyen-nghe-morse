@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 1. KHAI BÁO CÁC PHẦN TỬ DOM
     // ==========================================
+
+    // Sliders Spacing mới
+    const charSpaceSlider = document.getElementById('charSpaceSlider');
+    const charSpaceValue = document.getElementById('charSpaceValue');
+    const wordSpaceSlider = document.getElementById('wordSpaceSlider');
+    const wordSpaceValue = document.getElementById('wordSpaceValue');
+
+    // Congrats Modal
+    const congratsModal = document.getElementById('congratsModal');
+    const closeCongratsBtn = document.getElementById('closeCongratsBtn');
     
     // Cài đặt
     const modeRadios = document.querySelectorAll('input[name="mode"]');
@@ -104,12 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function playCurrentQuestion() {
         await ensureAudioInit();
         
-        const textToPlay = questionManager.currentAnswer;
+        // Thổi theo mã TELEX đã được dịch tự động
+        const textToPlay = questionManager.currentTelex; 
         const wpm = parseInt(wpmSlider.value);
+        const charMul = parseFloat(charSpaceSlider.value);
+        const wordMul = parseFloat(wordSpaceSlider.value);
 
         if (!textToPlay) return;
 
-        // Cập nhật UI khi bắt đầu phát
         statusIndicator.textContent = 'Đang phát...';
         statusIndicator.classList.add('playing');
         playBtn.disabled = true;
@@ -117,17 +129,14 @@ document.addEventListener('DOMContentLoaded', () => {
         stopBtn.disabled = false;
         nextBtn.disabled = true;
 
-        // Gọi Morse Engine
-        morseEngine.play(textToPlay, wpm, null, () => {
-            // Callback khi phát xong hoặc bị dừng
+        // Truyền thêm charMul và wordMul vào Morse Engine
+        morseEngine.play(textToPlay, wpm, charMul, wordMul, null, () => {
             statusIndicator.textContent = 'Sẵn sàng';
             statusIndicator.classList.remove('playing');
             playBtn.disabled = false;
             replayBtn.disabled = false;
             stopBtn.disabled = true;
             nextBtn.disabled = false;
-            
-            // Focus vào ô nhập liệu nếu chưa trả lời
             if (!hasAnswered) {
                 answerInput.focus();
             }
@@ -144,22 +153,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hasAnswered || !questionManager.currentAnswer) return;
         
         const userInput = answerInput.value;
-        if (userInput.trim() === '') return; // Không chấm nếu để trống
+        if (userInput.trim() === '') return;
 
         hasAnswered = true;
         const result = questionManager.checkAnswer(userInput);
         
-        // Cập nhật UI
         updateStatsUI();
         showFeedback(result);
         
-        // Disable input
         answerInput.disabled = true;
         checkBtn.disabled = true;
         showAnswerBtn.disabled = true;
         
-        // Focus nút Next
-        nextBtn.focus();
+        // KIỂM TRA NẾU HOÀN THÀNH VÒNG (CYCLE COMPLETED)
+        if (result.cycleCompleted) {
+            congratsModal.style.display = 'flex';
+        } else {
+            nextBtn.focus();
+        }
     }
 
     // Bỏ cuộc / Hiện đáp án
@@ -182,7 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hiển thị khung kết quả
     function showFeedback(result) {
         feedbackSection.style.display = 'block';
-        correctAnswerText.textContent = result.correctAnswer;
+        
+        // CẬP NHẬT: Hiện cả tiếng Việt và Telex
+        correctAnswerText.innerHTML = `${result.correctAnswer} <br><small style="color: var(--warning-glow); font-size: 0.9em;">(Còi thổi: ${questionManager.currentTelex})</small>`;
         userAnswerText.innerHTML = result.diffHTML;
 
         if (result.isCorrect) {
@@ -240,6 +253,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Sự kiện cho Sliders Spacing mới
+    charSpaceSlider.addEventListener('input', (e) => {
+        charSpaceValue.textContent = parseFloat(e.target.value).toFixed(1) + 'x';
+    });
+
+    wordSpaceSlider.addEventListener('input', (e) => {
+        wordSpaceValue.textContent = parseFloat(e.target.value).toFixed(1) + 'x';
+    });
+
+    // Sự kiện đóng Modal chúc mừng
+    closeCongratsBtn.addEventListener('click', () => {
+        congratsModal.style.display = 'none';
+        generateNewQuestion(); // Chuyển sang vòng mới luôn
+    });
+
     // Mute Button
     muteBtn.addEventListener('click', () => {
         const isMuted = !audioEngine.isMuted;
@@ -247,9 +275,15 @@ document.addEventListener('DOMContentLoaded', () => {
         muteIcon.textContent = isMuted ? 'volume_off' : 'volume_up';
     });
 
-    // Nút điều khiển chính
+    // Nút Câu mới (Skip)
     nextBtn.addEventListener('click', () => {
         stopPlaying();
+        
+        // CẬP NHẬT: Nếu chưa trả lời mà skip, phải nhét lại vào túi
+        if (!hasAnswered) {
+            questionManager.skipAndReturn();
+        }
+        
         generateNewQuestion();
     });
 

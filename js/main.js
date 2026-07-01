@@ -338,4 +338,22 @@ document.addEventListener('DOMContentLoaded', () => {
             circle.remove();
         }, 600);
     });
+
+    // ===== BẢN VÁ LỖI SLIDER KHOẢNG CÁCH =====
+    const charSpaceSliderFix = document.getElementById('charSpaceSlider');
+    const charSpaceValueFix = document.getElementById('charSpaceValue');
+    const wordSpaceSliderFix = document.getElementById('wordSpaceSlider');
+    const wordSpaceValueFix = document.getElementById('wordSpaceValue');
+
+    if (charSpaceSliderFix && charSpaceValueFix) {
+        charSpaceSliderFix.addEventListener('input', (e) => {
+            charSpaceValueFix.textContent = parseFloat(e.target.value).toFixed(1) + 'x';
+        });
+    }
+
+    if (wordSpaceSliderFix && wordSpaceValueFix) {
+        wordSpaceSliderFix.addEventListener('input', (e) => {
+            wordSpaceValueFix.textContent = parseFloat(e.target.value).toFixed(1) + 'x';
+        });
+    }
 });
